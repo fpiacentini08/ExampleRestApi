@@ -1,41 +1,38 @@
 package rest.api;
 
 import io.vertx.core.Vertx;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import io.vertx.ext.web.client.WebClient;
+import io.vertx.ext.web.codec.BodyCodec;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class RestApiVerticleTest {
 
-    private Vertx vertx;
-
-    @Before
-    public void setUp(TestContext context) {
-        vertx = Vertx.vertx();
-        vertx.deployVerticle(RestApiVerticle.class.getName(),
-                context.asyncAssertSuccess());
-    }
-
-    @After
-    public void tearDown(TestContext context) {
-        vertx.close(context.asyncAssertSuccess());
+    @BeforeAll
+    static void setup(Vertx vertx,
+                      VertxTestContext testContext) {
+        vertx.deployVerticle(new RestApiVerticle(), testContext.succeeding(restApiVerticleId -> testContext.completeNow()));
     }
 
     @Test
-    public void testMyApplication(TestContext context) {
-        final Async async = context.async();
+    public void testRestApi(Vertx vertx, VertxTestContext testContext) {
+        final WebClient webClient = WebClient.create(vertx);
 
-        vertx.createHttpClient().getNow(8080, "localhost", "/",
-                response -> {
-                    response.handler(body -> {
-                        context.assertTrue(body.toString().contains("Hello"));
-                        async.complete();
-                    });
-                });
+        webClient.get(8080, "localhost", "")
+                .as(BodyCodec.buffer())
+                .send(testContext.succeeding(response -> {
+                            testContext.verify(() ->
+                                    Assertions.assertAll(
+                                            () -> Assertions.assertEquals(200, response.statusCode())
+                                    )
+                            );
+                            testContext.completeNow();
+                        })
+                );
     }
 }
