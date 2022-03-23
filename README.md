@@ -1,5 +1,5 @@
 # ExampleRestApi
-Example Rest Api in Vertex 3
+Example Rest Api in Vertex 4
 
 Listens in port 8080. You can execute this by doing `mvn clean install` and then executing the fat jar created in the target folder.
 
